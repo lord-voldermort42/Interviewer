@@ -59,7 +59,10 @@ config = AppConfig()
 # TTS/STT engines
 TTS_PROVIDER = os.getenv('TTS_PROVIDER', 'openai')
 TTS_VOICE = os.getenv('TTS_VOICE', 'alloy')
-tts_engine: TextToSpeechBase = create_tts_engine(provider=TTS_PROVIDER, voice=TTS_VOICE)
+if TTS_PROVIDER and TTS_PROVIDER.lower() != 'none':
+    tts_engine: TextToSpeechBase = create_tts_engine(provider=TTS_PROVIDER, voice=TTS_VOICE)
+else:
+    tts_engine = None
 stt_engine = create_stt_engine()
 
 # =============================================================================
