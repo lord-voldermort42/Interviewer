@@ -1,6 +1,7 @@
 
+import os
 from langchain_together import ChatTogether
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, AzureChatOpenAI
 from langchain_google_vertexai import VertexAI
 
 from src.utils.llm.models.data import ModelResponse
@@ -23,6 +24,15 @@ engine_constructor = {
     "gpt-4o": ChatOpenAI,
     "meta-llama/Llama-3.1-8B-Instruct": ChatTogether,
     "meta-llama/Llama-3.1-70B-Instruct": ChatTogether
+}
+
+azure_engine_constructor = {
+    "gpt-4.1-mini": AzureChatOpenAI,
+    "gpt-4.1": AzureChatOpenAI,
+    "gpt-4.1-nano": AzureChatOpenAI,
+    "gpt-4o": AzureChatOpenAI,
+    "gpt-4o-mini-2024-07-18": AzureChatOpenAI,
+    "gpt-3.5-turbo-0125": AzureChatOpenAI,
 }
 
 def get_engine(model_name, **kwargs):
@@ -95,6 +105,17 @@ def get_engine(model_name, **kwargs):
     else:
         kwargs["max_tokens"] = token_limit
     kwargs["model_name"] = model_name
+
+    # Use AzureOpenAI if endpoint env var is set
+    azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+    if azure_endpoint and model_name in azure_engine_constructor:
+        kwargs["azure_deployment"] = model_name
+        kwargs["azure_endpoint"] = azure_endpoint
+        kwargs["api_key"] = os.getenv("AZURE_OPENAI_API_KEY")
+        kwargs["api_version"] = os.getenv("OPENAI_API_VERSION", "2024-02-01")
+        kwargs.pop("model_name", None)  # AzureChatOpenAI uses azure_deployment, not model_name
+        return azure_engine_constructor[model_name](**kwargs)
+
     return engine_constructor[model_name](**kwargs)
 
 def invoke_engine(engine, prompt, **kwargs) -> ModelResponse:
