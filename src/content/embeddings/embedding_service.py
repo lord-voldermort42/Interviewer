@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod
 from typing import List
 import numpy as np
 import os
-from openai import OpenAI
+from openai import OpenAI, AzureOpenAI
 
 
 class EmbeddingBackend(ABC):
@@ -34,10 +34,20 @@ class EmbeddingBackend(ABC):
 
 
 class OpenAIEmbeddingBackend(EmbeddingBackend):
-    """OpenAI embedding backend using text-embedding-3-small."""
+    """OpenAI embedding backend using text-embedding-3-small.
+    Uses AzureOpenAI if AZURE_OPENAI_ENDPOINT is set, otherwise standard OpenAI.
+    """
 
     def __init__(self, model: str = "text-embedding-3-small"):
-        self.client = OpenAI()
+        azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+        if azure_endpoint:
+            self.client = AzureOpenAI(
+                api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+                api_version=os.getenv("OPENAI_API_VERSION", "2024-02-01"),
+                azure_endpoint=azure_endpoint,
+            )
+        else:
+            self.client = OpenAI()
         self.model = model
         self._dimension = 1536  # text-embedding-3-small dimension
 
