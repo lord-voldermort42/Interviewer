@@ -76,6 +76,11 @@ app = Flask(__name__,
 app.secret_key = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(32))
 CORS(app)
 
+@app.after_request
+def set_security_headers(response):
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    return response
+
 # =============================================================================
 # AUTHENTICATION SETUP
 # =============================================================================
